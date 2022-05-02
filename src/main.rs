@@ -13,17 +13,25 @@ struct Cli {
     path: std::path::PathBuf,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The parse method is meant to be used in your main function.
     // When it fails, it will print out an error or help message and
     // immediately exit the program. Don’t use it in other places!
 
-    let args = Cli::parse();
-    let content = std::fs::read_to_string(&args.path).expect("could not read file");
+    // one line solution for exiting if error exists
+    // let result = std::fs::read_to_string(&args.path).unwrap();
 
-    for line in content.lines() {
-        if line.contains(&args.pattern) {
-            println!("{}", line);
-        }
-    }
+    // let result = std::fs::read_to_string(&args.path);
+
+    let args = Cli::parse();
+    // You can append this operator to a value of type Result,
+    // and Rust will internally expand this to something very similar to the match we just wrote.
+    let result = std::fs::read_to_string(&args.path)?;
+
+    // let content = match result {
+    //     Ok(content) => content,
+    //     Err(error) => return Err(error.into()),
+    // };
+    println!("file content: {:?}", result);
+    Ok(())
 }
