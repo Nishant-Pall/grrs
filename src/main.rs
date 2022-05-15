@@ -1,43 +1,41 @@
-#![allow(unused)]
+use std::env;
+use std::error::Error;
+use std::fs;
+use std::process;
 
-use clap::Parser;
+fn main() {
+    let args: Vec<String> = env::args().collect();
 
-#[derive(Parser)]
-/// Search for a pattern in a file and display the lines that contain it.
-struct Cli {
-    // The pattern to look for
-    pattern: String,
+    let config = Config::new(&args).unwrap_or_else(|err| {
+        println!("Problem passing arguments: {}", err);
+        process::exit(1);
+    });
 
-    // The path to file to be read
-    #[clap(parse(from_os_str))]
-    path: std::path::PathBuf,
+    if let Err(e) = run(config) {
+        println!("Application error: {}", e);
+        process::exit(1);
+    }
 }
 
-#[derive(Debug)]
-struct CustomError(String);
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(config.filename)?;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // The parse method is meant to be used in your main function.
-    // When it fails, it will print out an error or help message and
-    // immediately exit the program. Don’t use it in other places!
-
-    // one line solution for exiting if error exists
-    // let result = std::fs::read_to_string(&args.path).unwrap();
-
-    // let result = std::fs::read_to_string(&args.path);
-
-    let args = Cli::parse();
-    // You can append this operator to a value of type Result,
-    // and Rust will internally expand this to something very similar to the match we just wrote.
-
-    let path = "test.txt";
-
-    let result = std::fs::read_to_string(&args.path)
-        .map_err(|err| CustomError(format!("Error reading: `{}`: {}", path, err)));
-    // let content = match result {
-    //     Ok(content) => content,
-    //     Err(error) => return Err(error.into()),
-    // };
-    println!("file content: {:?}", result);
     Ok(())
+}
+
+struct Config {
+    query: String,
+    filename: String,
+}
+
+impl Config {
+    fn new(args: &[String]) -> Result<Config, &str> {
+        if args.len() < 3 {
+            return Err("not enough arguments");
+        }
+        let query = args[1].clone();
+        let filename = args[2].clone();
+
+        Ok(Config { query, filename })
+    }
 }
